@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Payment App</title>
+    <!-- Line 4: Load Stripe's JavaScript library -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Line 5: Load our custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Buy Premium Course</h1>
+        <div class="product">
+            <h3>JavaScript Mastery Course</h3>
+            <p>Price: $20.00</p>
+            <!-- Line 13: Button that triggers payment -->
+            <button id="buy-button">Buy Now</button>
+        </div>
+        
+        <!-- Line 16: This div will contain Stripe's payment form -->
+        <div id="payment-form" style="display: none;">
+            <div id="card-element">
+                <!-- Stripe Elements will create form fields here -->
+            </div>
+            <button id="submit-payment">Pay $20</button>
+        </div>
+        
+        <!-- Line 22: Messages will appear here -->
+        <div id="messages"></div>
+    </div>
+    
+    <!-- Line 26: Load our custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
