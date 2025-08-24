@@ -1,8 +1,8 @@
-const OrderService = require('../services/orderService');
+import OrderService from '../services/orderService.js';
 
 class OrderController {
-  static getOrder(req, res) {
-    const order = OrderService.findById(req.params.orderId);
+  static async getOrder(req, res) {
+    const order = await OrderService.findById(req.params.orderId);
     
     if (order) {
       res.json(order);
@@ -12,4 +12,4 @@ class OrderController {
   }
 }
 
-module.exports = OrderController;
+export default OrderController;

@@ -1,37 +1,89 @@
-const Order = require('../models/Order');
-
-// In-memory storage (will become database later)
-let orders = [];
+import prisma from '../lib/prisma.js';
 
 class OrderService {
-  static createOrder(paymentIntentId, amount) {
-    const order = new Order(paymentIntentId, amount);
-    orders.push(order);
-    console.log('📝 Order created:', order.id, 'Status: PENDING');
-    return order;
+  static async createOrder(paymentIntentId, amount, customerEmail) {
+    try {
+      // Generate order ID
+      const orderId = 'ord_' + Date.now();
+      
+      // Create order in database
+      const order = await prisma.order.create({
+        data: {
+          id: orderId,
+          paymentIntentId: paymentIntentId,
+          amount: amount,
+          customerEmail: customerEmail,
+          status: 'pending'
+        }
+      });
+      
+      console.log('📝 Order created in database:', order.id, 'for:', customerEmail);
+      return order;
+      
+    } catch (error) {
+      console.error('❌ Error creating order:', error);
+      throw error;
+    }
   }
 
-  static findByPaymentIntentId(paymentIntentId) {
-    return orders.find(o => o.paymentIntentId === paymentIntentId);
+  static async findByPaymentIntentId(paymentIntentId) {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { paymentIntentId: paymentIntentId }
+      });
+      return order;
+    } catch (error) {
+      console.error('❌ Error finding order by paymentIntentId:', error);
+      return null;
+    }
   }
 
-  static findById(orderId) {
-    return orders.find(o => o.id === orderId);
+  static async findById(orderId) {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId }
+      });
+      return order;
+    } catch (error) {
+      console.error('❌ Error finding order by ID:', error);
+      return null;
+    }
   }
 
-  static updateOrderStatus(paymentIntentId, status) {
-    const order = this.findByPaymentIntentId(paymentIntentId);
-    if (order) {
-      if (status === 'paid') {
-        order.markAsPaid();
-      } else if (status === 'failed') {
-        order.markAsFailed();
+  static async updateOrderStatus(paymentIntentId, status) {
+    try {
+      // Find the order first
+      const existingOrder = await prisma.order.findUnique({
+        where: { paymentIntentId: paymentIntentId }
+      });
+
+      if (!existingOrder) {
+        console.error('❌ Order not found for paymentIntentId:', paymentIntentId);
+        return null;
       }
+
+      // Update the order
+      const updateData = { status: status };
+      
+      if (status === 'paid') {
+        updateData.paidAt = new Date();
+      } else if (status === 'failed') {
+        updateData.failedAt = new Date();
+      }
+
+      const order = await prisma.order.update({
+        where: { paymentIntentId: paymentIntentId },
+        data: updateData
+      });
+
       console.log(`✅ ORDER UPDATED: Order ${order.id} is now ${status.toUpperCase()}`);
       return order;
+      
+    } catch (error) {
+      console.error('❌ Error updating order status:', error);
+      return null;
     }
-    return null;
   }
 }
 
-module.exports = OrderService;
+export default OrderService;

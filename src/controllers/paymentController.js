@@ -1,18 +1,24 @@
-const { stripe } = require('../config/stripe');
-const OrderService = require('../services/orderService');
+import { stripe } from '../config/stripe.js';
+import OrderService from '../services/orderService.js';
 
 class PaymentController {
   static async createPayment(req, res) {
     try {
+      const { customerEmail } = req.body;
+      if (!customerEmail) {
+        return res.status(400).send({ error: 'Customer email is required' });}
+
       // Create payment intent with Stripe
       const paymentIntent = await stripe.paymentIntents.create({
         amount: 2000,
         currency: 'usd',
+        receipt_email: customerEmail,                         // ← Tell Stripe the email
+
       });
-
+      
       // Create order in our system
-      const order = OrderService.createOrder(paymentIntent.id, 2000);
-
+      const order = await OrderService.createOrder(paymentIntent.id, 2000, customerEmail);
+      
       // Send response
       res.send({ 
         clientSecret: paymentIntent.client_secret,
@@ -24,4 +30,4 @@ class PaymentController {
   }
 }
 
-module.exports = PaymentController;
+export default PaymentController;

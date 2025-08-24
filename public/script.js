@@ -16,17 +16,37 @@ const messagesDiv = document.getElementById('messages');
 
 // Lines 13-21: What happens when user clicks "Buy Now"
 buyButton.addEventListener('click', async () => {
+  const customerEmail = document.getElementById('customer-email').value;
   
+  if (!customerEmail) {
+    alert('Please enter your email address');
+    return;
+  }
+
   buyButton.style.display = 'none';
   paymentForm.style.display = 'block';
   const response = await fetch('/create-payment', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customerEmail: customerEmail })    // ← Send email to server
+
   });
+  if (!response.ok) {                                         // <-- handle 400s
+  const { error } = await response.json().catch(() => ({ error: 'Bad Request' }));
+  alert('Create payment failed: ' + error);
+  buyButton.style.display = 'block';
+  paymentForm.style.display = 'none';
+  return;
+}
+
   
   const { clientSecret, orderId } = await response.json(); // Get BOTH values
   
-  
+  if (!clientSecret) {
+  alert('No clientSecret returned from server');
+  return;
+}
+
   window.clientSecret = clientSecret;
   window.orderId = orderId; // Store order ID for status checking
 });
@@ -51,6 +71,7 @@ submitButton.addEventListener('click', async () => {
         <div id="status-check">Please wait...</div>
       </div>
     `;
+      console.log(orderId)
     
     // Check with OUR SERVER what really happened
     checkPaymentStatus(orderId);
@@ -70,13 +91,15 @@ async function checkPaymentStatus(orderId) {
   
   // Poll our server every 2 seconds for up to 30 seconds
   let attempts = 0;
-  const maxAttempts = 15; // 30 seconds total
+  const maxAttempts = 30; // 30 seconds total
   
   const checkInterval = setInterval(async () => {
     try {
       const response = await fetch(`/order/${orderId}`);
       const order = await response.json();
-      
+      console.log('status poll HTTP:', response.status);
+      console.log('polled order:', order);              // <— see real payload
+
       if (order.status === 'paid') {
         // SUCCESS! Payment actually worked
         clearInterval(checkInterval);
